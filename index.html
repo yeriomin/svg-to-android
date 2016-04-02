@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.3.0/min/basic.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.3.0/min/dropzone.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/4.3.0/min/dropzone.min.js"></script>
+    <title>svg-to-android</title>
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <script type="text/javascript">
+      $(document).ready(function(){
+        Dropzone.autoDiscover = false;
+        $("#dropzone").dropzone({
+          acceptedFiles: "image/svg+xml",
+          maxFilesize: 2,
+          uploadMultiple: true,
+          parallelUploads: 20,
+          init: function () {
+            this.on("success", function (file, responseText) {
+              if (this.getUploadingFiles().length === 0 && this.getQueuedFiles().length === 0) {
+                obj = JSON.parse(responseText);
+                if (obj.success) {
+                  console.log(obj.link);
+                  var nodeP = document.createElement("p");
+                  nodeP.appendChild(document.createTextNode("Processing..."));
+                  document.getElementById("links").appendChild(nodeP);
+                  waitAndCheck(obj.link, nodeP);
+                } else {
+                  console.log(obj.error);
+                }
+              }
+            });
+          }
+        });
+      });
+      function drawLink(link, nodeP) {
+        var nodeA = document.createElement("a");
+        nodeA.download = link;
+        nodeA.href = link;
+        nodeA.appendChild(document.createTextNode(link));
+        nodeP.appendChild(nodeA);
+        nodeA.click();
+      }
+      function waitAndCheck(link, nodeP) {
+        $.ajax({
+          type: 'HEAD',
+          url: link,
+          success: function() {
+            while (nodeP.firstChild) {
+              nodeP.removeChild(nodeP.firstChild);
+            }
+            drawLink(link, nodeP);
+          },
+          error: function() {
+            setTimeout(function() {waitAndCheck(link, nodeP);}, 2000);
+          }
+        });
+      }
+    </script>
+    <div class="container">
+      <div class="page-header">
+        <h1>Convert SVG to android drawable set</h1>
+      </div>
+      <p class="lead">Choose SVG files to convert. You will get a zip archive with PNG files put into appropriate directories according to DPI upon completion.</p>
+      <p>Name your SVGs appropriately before uploading. Then just extract the archive into your src/main/res directory.</p>
+      <p>SVGs are converted using inkscape and further compressed by pngquant.</p>
+      <p><form action="/convert" class="dropzone" id="dropzone"></form></p>
+      <p id="links"></p>
+    </div>
+    <footer class="footer">
+      <div class="container">
+        <p class="text-muted">© 2016, <a href="https://github.com/yeriomin">Sergey Eremin</a></p>
+      </div>
+    </footer>
+    
+  </body>
+</html>
